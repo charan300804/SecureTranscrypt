@@ -182,7 +182,7 @@ export default function ReceiverPanel() {
             <div className="w-full min-h-[100px] rounded-lg border bg-muted p-4 flex items-center justify-center">
               {isDataDecrypted && dataDecryptState?.data ? (
                 <blockquote className="text-lg italic border-l-4 border-primary pl-4 text-foreground">
-                  {dataDecryptate.data}
+                  {dataDecryptState.data}
                 </blockquote>
               ) : (
                 <div className="text-center text-muted-foreground p-4">
