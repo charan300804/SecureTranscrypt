@@ -65,7 +65,6 @@ export async function signUp(role: UserRole, prevState: { message: string }, for
   // MOCK: Create user
   const newUser = { id: String(users.length + 1), name, email, password, role };
   users.push(newUser);
-  console.log("New user registered:", newUser);
   
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   const session = { userId: newUser.id, name: newUser.name, role: newUser.role, expires: expires.toISOString() };
@@ -112,7 +111,10 @@ export async function processFile(prevState: any, formData: FormData): Promise<{
       fileUrl = await fileToDataURL(imageFile);
     } else if (imageUrl) {
       // If no file is uploaded, use the placeholder image URL
-      fileUrl = imageUrl;
+      const response = await fetch(imageUrl);
+      const imageBuffer = await response.arrayBuffer();
+      const contentType = response.headers.get('content-type') || 'image/png';
+      fileUrl = `data:${contentType};base64,${Buffer.from(imageBuffer).toString('base64')}`;
     }
   } catch (error) {
     console.error("Error processing file:", error);

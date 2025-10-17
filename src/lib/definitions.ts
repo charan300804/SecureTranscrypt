@@ -31,5 +31,5 @@ export type SessionPayload = {
   userId: string;
   name: string;
   role: UserRole;
-  expires: Date;
+  expires: string; // Should be an ISO 8601 date string
 };

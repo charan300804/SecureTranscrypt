@@ -15,7 +15,16 @@ export function middleware(request: NextRequest) {
   
   if (sessionCookie?.value) {
     try {
-      session = JSON.parse(sessionCookie.value);
+      const sessionData = JSON.parse(sessionCookie.value);
+      // Validate session expiration
+      if (sessionData.expires && new Date(sessionData.expires) > new Date()) {
+        session = sessionData;
+      } else {
+        // Clear expired cookie
+        const response = NextResponse.next();
+        response.cookies.delete(SESSION_COOKIE_NAME);
+        return response;
+      }
     } catch (error) {
       console.error('Failed to parse session cookie:', error);
       // Invalid session cookie, treat as unauthenticated
