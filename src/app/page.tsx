@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Send, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import ClientFooter from "@/components/client-footer";
 
 export default function Home() {
   return (
@@ -105,9 +105,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} SecureTranscrypt. All Rights Reserved.</p>
-      </footer>
+      <ClientFooter />
     </div>
   );
 }
