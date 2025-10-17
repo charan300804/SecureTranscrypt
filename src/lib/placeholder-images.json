@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "sender-image-placeholder",
+      "description": "A placeholder image for the sender to 'upload' and encrypt.",
+      "imageUrl": "https://picsum.photos/seed/securetranscrypt/1200/800",
+      "imageHint": "landscape mountain"
+    }
+  ]
 }
