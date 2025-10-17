@@ -42,7 +42,7 @@ export default function SenderPanel() {
       }
       setIsProcessing(false);
     }
-  }, [formState, isSubmitted]);
+  }, [formState, isSubmitted, toast]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -187,20 +187,19 @@ export default function SenderPanel() {
             )}
           </CardContent>
           <CardFooter className="flex-col gap-2 items-stretch">
-            <Button type="submit" className="w-full" disabled={isProcessing || formState.success}>
-              {isProcessing ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
-              ) : formState.success ? (
-                <><CheckCircle className="mr-2 h-4 w-4" /> Done</>
-              ) : (
-                <><ArrowRight className="mr-2 h-4 w-4" /> Process & Generate File</>
-              )}
-            </Button>
-            {formState.success && (
-              <Button onClick={resetFlow} variant="outline">
+            {formState.success ? (
+               <Button onClick={resetFlow} variant="outline" className="w-full">
                 <RotateCcw className="mr-2 h-4 w-4"/>
                 Start Over
               </Button>
+            ) : (
+              <Button type="submit" className="w-full" disabled={isProcessing}>
+                {isProcessing ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                ) : (
+                  <><ArrowRight className="mr-2 h-4 w-4" /> Process & Generate File</>
+                )}
+            </Button>
             )}
           </CardFooter>
         </form>
