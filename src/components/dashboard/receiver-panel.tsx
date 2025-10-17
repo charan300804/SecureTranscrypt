@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { unlockImage, decryptData } from "@/lib/actions";
-import { AlertCircle, CheckCircle, Eye, FileLock, KeyRound, Loader2, Lock, Unlock, UploadCloud } from "lucide-react";
+import { CheckCircle, Eye, FileLock, KeyRound, Loader2, Lock, Unlock, UploadCloud } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -115,7 +115,7 @@ export default function ReceiverPanel() {
         </Card>
 
         {/* Step 2: Unlock Image */}
-        <Card className={`shadow-md transition-opacity duration-500 ${currentStep === 'upload' || isImageUnlocked ? 'opacity-50' : ''}`}>
+        <Card className={`shadow-md transition-opacity duration-500 ${currentStep === 'upload' ? 'opacity-50' : ''}`}>
           <form action={handleImageUnlock}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -130,13 +130,14 @@ export default function ReceiverPanel() {
                 <Input id="imageKey" name="imageKey" type="password" placeholder="Enter image key" required disabled={currentStep === 'upload' || isUnlocking || isImageUnlocked} />
               </div>
             </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={currentStep === 'upload' || isUnlocking || isImageUnlocked}>
-                {isUnlocking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Unlocking...</> : 
-                isImageUnlocked ? <><CheckCircle className="mr-2 h-4 w-4" /> Unlocked</> :
-                <><KeyRound className="mr-2 h-4 w-4" /> Unlock Image</>}
-              </Button>
-            </CardFooter>
+             {!isImageUnlocked && (
+              <CardFooter>
+                  <Button type="submit" className="w-full" disabled={currentStep === 'upload' || isUnlocking}>
+                    {isUnlocking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Unlocking...</> : 
+                    <><KeyRound className="mr-2 h-4 w-4" /> Unlock Image</>}
+                  </Button>
+              </CardFooter>
+            )}
           </form>
         </Card>
 
@@ -156,14 +157,15 @@ export default function ReceiverPanel() {
                 <Input id="dataKey" name="dataKey" type="password" placeholder="Enter data key" required disabled={currentStep !== 'decrypt-data' || isDataDecrypted || isDecrypting} />
               </div>
             </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={currentStep !== 'decrypt-data' || isDecrypting || isDataDecrypted}>
-                {isDecrypting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Decrypting...</> :
-                 isDataDecrypted ? <><CheckCircle className="mr-2 h-4 w-4" /> Decrypted</> :
-                 <><Eye className="mr-2 h-4 w-4" /> Decrypt Data</>
-                 }
-              </Button>
-            </CardFooter>
+            {!isDataDecrypted && (
+              <CardFooter>
+                <Button type="submit" className="w-full" disabled={currentStep !== 'decrypt-data' || isDecrypting}>
+                  {isDecrypting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Decrypting...</> :
+                   <><Eye className="mr-2 h-4 w-4" /> Decrypt Data</>
+                   }
+                </Button>
+              </CardFooter>
+            )}
           </form>
         </Card>
 
