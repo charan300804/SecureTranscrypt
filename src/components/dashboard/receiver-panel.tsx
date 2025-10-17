@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
-import { useState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,49 +13,54 @@ import { CheckCircle, Eye, FileLock, KeyRound, Loader2, Lock, Unlock, UploadClou
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-type Step = 'upload' | 'unlock-image' | 'decrypt-data' | 'done';
+const initialImageUnlockState = { success: false, message: "" };
+const initialDataDecryptState = { success: false, message: "", data: "" };
 const secureImage = PlaceHolderImages.find(img => img.id === 'sender-image-placeholder');
+
+type Step = 'upload' | 'unlock-image' | 'decrypt-data' | 'done';
 
 export default function ReceiverPanel() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const [imageUnlockState, imageUnlockAction, isImageUnlocking] = useActionState(unlockImage, { success: false, message: "" });
-  const [dataDecryptState, dataDecryptAction, isDataDecrypting] = useActionState(decryptData, { success: false, message: "", data: "" });
-  
-  const [isImageUnlocked, setIsImageUnlocked] = useState(false);
-  const [isDataDecrypted, setIsDataDecrypted] = useState(false);
+  const [imageUnlockState, imageUnlockAction, isImageUnlocking] = useActionState(unlockImage, initialImageUnlockState);
+  const [dataDecryptState, dataDecryptAction, isDataDecrypting] = useActionState(decryptData, initialDataDecryptState);
+
+  const isImageUnlocked = imageUnlockState.success;
+  const isDataDecrypted = dataDecryptState.success;
 
   useEffect(() => {
-    if (imageUnlockState.success && !isImageUnlocking) {
-      setIsImageUnlocked(true);
-      setCurrentStep('decrypt-data');
-      toast({
-        title: "Success",
-        description: "Image successfully unlocked!",
-        variant: "default",
-        className: "bg-green-100 border-green-300"
-      });
-    } else if (imageUnlockState.message && !isImageUnlocking) {
-      toast({
-        variant: "destructive",
-        title: "Image Unlock Failed",
-        description: imageUnlockState.message,
-      });
+    if (imageUnlockState.message && !isImageUnlocking) {
+      if (imageUnlockState.success) {
+        setCurrentStep('decrypt-data');
+        toast({
+          title: "Success",
+          description: "Image successfully unlocked!",
+          variant: "default",
+          className: "bg-green-100 border-green-300"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Image Unlock Failed",
+          description: imageUnlockState.message,
+        });
+      }
     }
   }, [imageUnlockState, toast, isImageUnlocking]);
 
   useEffect(() => {
-    if (dataDecryptState.success && !isDataDecrypting) {
-      setIsDataDecrypted(true);
-      setCurrentStep('done');
-    } else if (dataDecryptState.message && !isDataDecrypting) {
-      toast({
-        variant: "destructive",
-        title: "Data Decryption Failed",
-        description: dataDecryptState.message,
-      });
+    if (dataDecryptState.message && !isDataDecrypting) {
+      if (dataDecryptState.success) {
+        setCurrentStep('done');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Data Decryption Failed",
+          description: dataDecryptState.message,
+        });
+      }
     }
   }, [dataDecryptState, toast, isDataDecrypting]);
 
@@ -90,9 +94,9 @@ export default function ReceiverPanel() {
   const resetFlow = () => {
     setCurrentStep('upload');
     setUploadedFile(null);
-    setIsImageUnlocked(false);
-    setIsDataDecrypted(false);
-    // You might want to reset form states here if they hold onto old data
+    // Reset action states to their initial values
+    imageUnlockAction(initialImageUnlockState as any);
+    dataDecryptAction(initialDataDecryptState as any);
     const forms = document.querySelectorAll('form');
     forms.forEach(form => form.reset());
   }
@@ -109,7 +113,7 @@ export default function ReceiverPanel() {
           </CardHeader>
           <CardContent>
             <Input id="file-upload" type="file" onChange={handleFileChange} disabled={currentStep !== 'upload'} />
-            {uploadedFile && <p className="mt-4 text-sm font-medium text-muted-foreground">File ready: {uploadedFile.name}</p>}
+            {uploadedFile && currentStep !== 'upload' && <p className="mt-4 text-sm font-medium text-muted-foreground">File ready: {uploadedFile.name}</p>}
           </CardContent>
         </Card>
 
@@ -180,8 +184,8 @@ export default function ReceiverPanel() {
           <div>
             <h3 className="font-semibold mb-2">Decrypted Image</h3>
             <div className="aspect-video w-full rounded-lg overflow-hidden border bg-muted flex items-center justify-center">
-              {isImageUnlocked ? (
-                <Image src={secureImage?.imageUrl || ""} alt="Decrypted Image" width={1200} height={800} className="object-cover w-full h-full" data-ai-hint="landscape" />
+              {isImageUnlocked && secureImage ? (
+                <Image src={secureImage.imageUrl} alt="Decrypted Image" width={1200} height={800} className="object-cover w-full h-full" data-ai-hint="landscape" />
               ) : (
                 <div className="text-center text-muted-foreground p-4">
                   <Lock className="mx-auto h-12 w-12" />
@@ -225,3 +229,5 @@ export default function ReceiverPanel() {
     </div>
   );
 }
+
+    
