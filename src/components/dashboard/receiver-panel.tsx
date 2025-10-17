@@ -94,11 +94,19 @@ export default function ReceiverPanel() {
   const resetFlow = () => {
     setCurrentStep('upload');
     setUploadedFile(null);
-    // Reset action states to their initial values
+    // Directly dispatch initial state to reset actions
     imageUnlockAction(initialImageUnlockState as any);
     dataDecryptAction(initialDataDecryptState as any);
+    
+    // Find all forms and reset their fields
     const forms = document.querySelectorAll('form');
     forms.forEach(form => form.reset());
+    
+    // Specifically reset the file input
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   }
 
   return (
@@ -229,5 +237,3 @@ export default function ReceiverPanel() {
     </div>
   );
 }
-
-    

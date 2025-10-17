@@ -126,8 +126,6 @@ export async function unlockImage(prevState: any, formData: FormData) {
   const imageKey = formData.get('imageKey');
   const fileName = formData.get('fileName');
 
-  console.log(`Unlocking image for file: ${fileName}`);
-  
   // Simulate processing time
   await new Promise(resolve => setTimeout(resolve, 1000));
   
@@ -144,11 +142,12 @@ export async function decryptData(prevState: any, formData: FormData) {
   const dataKey = formData.get('dataKey') as string;
   const fileName = formData.get('fileName');
 
-  console.log(`Decrypting data for file: ${fileName}`);
-
   if (!dataKey) {
     return { success: false, message: "Data key is required.", data: "" };
   }
+
+  // Simulate processing time
+  await new Promise(resolve => setTimeout(resolve, 1500));
 
   try {
     const validationResult = await validateDecryptionKey({ key: dataKey });
