@@ -2,7 +2,7 @@
 
 import { useFormState } from "react-dom";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { processFile } from "@/lib/actions";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loader2, UploadCloud } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loader2, UploadCloud, RotateCcw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const senderImage = PlaceHolderImages.find(img => img.id === 'sender-image-placeholder');
@@ -24,6 +24,25 @@ export default function SenderPanel() {
   const [formState, formAction] = useFormState(processFile, { success: false, message: "", fileUrl: "" });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  useEffect(() => {
+    if(isSubmitted) {
+      if (formState.success) {
+        toast({
+            title: "Success!",
+            description: formState.message,
+            className: "bg-green-100 border-green-300"
+        });
+      } else if (formState.message) {
+        toast({
+            variant: "destructive",
+            title: "Processing Failed",
+            description: formState.message,
+        });
+      }
+      setIsProcessing(false);
+    }
+  }, [formState, isSubmitted]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,7 +60,7 @@ export default function SenderPanel() {
     }
   };
   
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!uploadedFile && !senderImage) {
         toast({
@@ -57,14 +76,21 @@ export default function SenderPanel() {
     if (uploadedFile) {
       formData.set('image', uploadedFile);
     } else if (senderImage) {
-       // If no file is uploaded, we can assume we are using the placeholder.
-       // The action needs to know about it. We can pass the URL.
        formData.set('imageUrl', senderImage.imageUrl);
     }
     
-    await formAction(formData);
-    setIsProcessing(false);
+    formAction(formData);
   }
+
+  const resetFlow = () => {
+    setIsSubmitted(false);
+    setIsProcessing(false);
+    setUploadedFile(null);
+    setPreviewUrl(senderImage?.imageUrl ?? null);
+    // Reset form fields if inside a <form> element
+    const form = document.querySelector('form');
+    form?.reset();
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -168,7 +194,7 @@ export default function SenderPanel() {
                 </div>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col gap-2 items-stretch">
             <Button type="submit" className="w-full" disabled={isProcessing || formState.success}>
               {isProcessing ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
@@ -178,6 +204,12 @@ export default function SenderPanel() {
                 <><ArrowRight className="mr-2 h-4 w-4" /> Process & Generate File</>
               )}
             </Button>
+            {formState.success && (
+              <Button onClick={resetFlow} variant="outline">
+                <RotateCcw className="mr-2 h-4 w-4"/>
+                Start Over
+              </Button>
+            )}
           </CardFooter>
         </form>
       </Card>

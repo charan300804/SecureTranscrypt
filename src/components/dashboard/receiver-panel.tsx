@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormState } from "react-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,41 @@ export default function ReceiverPanel() {
   const [isImageUnlocked, setIsImageUnlocked] = useState(false);
   const [isDataDecrypted, setIsDataDecrypted] = useState(false);
 
+  useEffect(() => {
+    if (imageUnlockState.success) {
+      setIsImageUnlocked(true);
+      setCurrentStep('decrypt-data');
+      toast({
+        title: "Success",
+        description: "Image successfully unlocked!",
+        variant: "default",
+        className: "bg-green-100 border-green-300"
+      });
+    } else if (imageUnlockState.message) {
+      toast({
+        variant: "destructive",
+        title: "Image Unlock Failed",
+        description: imageUnlockState.message,
+      });
+    }
+    setIsUnlocking(false);
+  }, [imageUnlockState]);
+
+  useEffect(() => {
+    if (dataDecryptState.success) {
+        setIsDataDecrypted(true);
+        setCurrentStep('done');
+    } else if (dataDecryptState.message) {
+         toast({
+            variant: "destructive",
+            title: "Data Decryption Failed",
+            description: dataDecryptState.message,
+        });
+    }
+    setIsDecrypting(false);
+  }, [dataDecryptState]);
+
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -46,42 +81,14 @@ export default function ReceiverPanel() {
     e.preventDefault();
     setIsUnlocking(true);
     const formData = new FormData(e.currentTarget);
-    const result = await imageUnlockAction(formData);
-    setIsUnlocking(false);
-    if(result?.success) {
-      setIsImageUnlocked(true);
-      setCurrentStep('decrypt-data');
-      toast({
-        title: "Success",
-        description: "Image successfully unlocked!",
-        variant: "default",
-        className: "bg-green-100 border-green-300"
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Image Unlock Failed",
-        description: result?.message || "An unknown error occurred.",
-      });
-    }
+    imageUnlockAction(formData);
   };
 
   const handleDataDecrypt = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsDecrypting(true);
     const formData = new FormData(e.currentTarget);
-    const result = await dataDecryptAction(formData);
-    setIsDecrypting(false);
-    if(result?.success) {
-        setIsDataDecrypted(true);
-        setCurrentStep('done');
-    } else {
-         toast({
-            variant: "destructive",
-            title: "Data Decryption Failed",
-            description: result?.message || "An unknown error occurred.",
-        });
-    }
+    dataDecryptAction(formData);
   };
 
   const resetFlow = () => {
