@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,7 @@ export default function SenderPanel() {
   const { toast } = useToast();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(senderImage?.imageUrl ?? null);
-  const [formState, formAction] = useFormState(processFile, { success: false, message: "", fileUrl: "" });
+  const [formState, formAction] = useActionState(processFile, { success: false, message: "", fileUrl: "" });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
