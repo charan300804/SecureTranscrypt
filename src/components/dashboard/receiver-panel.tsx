@@ -48,7 +48,7 @@ export default function ReceiverPanel() {
       });
     }
     setIsUnlocking(false);
-  }, [imageUnlockState]);
+  }, [imageUnlockState, toast]);
 
   useEffect(() => {
     if (dataDecryptState.success) {
@@ -62,7 +62,7 @@ export default function ReceiverPanel() {
         });
     }
     setIsDecrypting(false);
-  }, [dataDecryptState]);
+  }, [dataDecryptState, toast]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +120,7 @@ export default function ReceiverPanel() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     {isImageUnlocked ? <Unlock className="text-green-500"/> : <Lock className="text-primary"/>}
-                    2. Unlock Image
+                    2. Unlock Image {isImageUnlocked ? "(Completed)" : ""}
                 </CardTitle>
               <CardDescription>Enter the first key to reveal the image.</CardDescription>
             </CardHeader>
