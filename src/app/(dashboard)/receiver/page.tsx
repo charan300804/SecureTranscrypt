@@ -1,5 +1,10 @@
 import ReceiverPanel from "@/components/dashboard/receiver-panel";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { type Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Receiver Dashboard | SecureTranscrypt",
+};
 
 export default function ReceiverPage() {
   return (
