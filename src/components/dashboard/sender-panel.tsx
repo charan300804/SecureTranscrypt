@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useOptimistic } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
@@ -17,6 +17,7 @@ import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loa
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const senderImage = PlaceHolderImages.find(img => img.id === 'sender-image-placeholder');
+const initialState = { success: false, message: "", fileUrl: "" };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -34,7 +35,7 @@ function SubmitButton() {
 
 export default function SenderPanel() {
   const { toast } = useToast();
-  const [formState, formAction] = useActionState(processFile, { success: false, message: "", fileUrl: "" });
+  const [formState, formAction] = useActionState(processFile, initialState);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(senderImage?.imageUrl ?? null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -89,9 +90,8 @@ export default function SenderPanel() {
     formRef.current?.reset();
     setUploadedFile(null);
     setPreviewUrl(senderImage?.imageUrl ?? null);
-    // Directly calling formAction will trigger a re-render with the initial state
     // This is a way to reset the action state without another piece of state
-    formAction(new FormData());
+    formAction(initialState as any);
   };
 
   return (
