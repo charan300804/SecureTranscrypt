@@ -88,6 +88,29 @@ export async function signOut() {
 
 // MOCK SENDER/RECEIVER ACTIONS
 
+async function toDataURL(url: string): Promise<string> {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    // This is a server action, but we need browser APIs for this conversion.
+    // In a real scenario, this would be handled differently, but for this mock, we assume browser-like env.
+    // A more robust solution for server-side would use Buffer.
+    const dataUrlPromise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+    });
+    reader.readAsDataURL(blob);
+    return dataUrlPromise;
+}
+
+async function fileToDataURL(file: File): Promise<string> {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const dataUrl = `data:${file.type};base64,${buffer.toString('base64')}`;
+    return dataUrl;
+}
+
+
 export async function processFile(prevState: any, formData: FormData): Promise<{success: boolean, message: string, fileUrl: string}> {
   // Simulate processing time
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -96,11 +119,19 @@ export async function processFile(prevState: any, formData: FormData): Promise<{
   const imageFile = formData.get('image') as File | null;
 
   let fileUrl = "/mock-encrypted-image.png"; // default
-  if(imageFile) {
-    // In a real app, you would upload this file and get a URL
-    fileUrl = URL.createObjectURL(imageFile);
-  } else if (imageUrl) {
-    fileUrl = imageUrl;
+
+  try {
+    if(imageFile && imageFile.size > 0) {
+      // In a real app, you would process, encrypt, and upload this file to cloud storage.
+      // For this mock, we'll convert it to a data URL to make it downloadable.
+      fileUrl = await fileToDataURL(imageFile);
+    } else if (imageUrl) {
+      // If no file is uploaded, use the placeholder image URL
+      fileUrl = imageUrl;
+    }
+  } catch (error) {
+    console.error("Error processing file:", error);
+    return { success: false, message: "There was an error processing your image.", fileUrl: "" };
   }
   
   return { success: true, message: "File processed successfully!", fileUrl };
