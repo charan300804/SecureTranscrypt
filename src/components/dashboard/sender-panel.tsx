@@ -62,14 +62,6 @@ export default function SenderPanel() {
   
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!uploadedFile && !senderImage) {
-        toast({
-            variant: "destructive",
-            title: "No Image Provided",
-            description: "Please upload an image before processing.",
-        });
-        return;
-    }
     setIsProcessing(true);
     setIsSubmitted(true);
     const formData = new FormData(e.currentTarget);
