@@ -10,16 +10,14 @@ const SESSION_COOKIE_NAME = "secure-transcrypt-session";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check if the route is protected
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  // Check if the route is an auth route
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME);
   let session: SessionPayload | null = null;
+  
   if (sessionCookie?.value) {
     try {
-      // The cookie value is a string, so it needs to be parsed.
       session = JSON.parse(sessionCookie.value);
     } catch (error) {
       console.error('Failed to parse session cookie:', error);
