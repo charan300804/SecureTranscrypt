@@ -20,9 +20,7 @@ export function middleware(request: NextRequest) {
   if (sessionCookie?.value) {
     try {
       // The cookie value is a string, so it needs to be parsed.
-      const sessionData = JSON.parse(sessionCookie.value);
-      // The session payload is nested inside the parsed data.
-      session = sessionData;
+      session = JSON.parse(sessionCookie.value);
     } catch (error) {
       console.error('Failed to parse session cookie:', error);
       // Invalid session cookie, treat as unauthenticated
