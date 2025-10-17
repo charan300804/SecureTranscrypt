@@ -22,51 +22,43 @@ export default function ReceiverPanel() {
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const [imageUnlockState, imageUnlockAction] = useFormState(unlockImage, { success: false, message: "" });
-  const [dataDecryptState, dataDecryptAction] = useFormState(decryptData, { success: false, message: "", data: "" });
-
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [imageUnlockState, imageUnlockAction, isImageUnlocking] = useActionState(unlockImage, { success: false, message: "" });
+  const [dataDecryptState, dataDecryptAction, isDataDecrypting] = useActionState(decryptData, { success: false, message: "", data: "" });
+  
   const [isImageUnlocked, setIsImageUnlocked] = useState(false);
   const [isDataDecrypted, setIsDataDecrypted] = useState(false);
 
   useEffect(() => {
-    if (isUnlocking) {
-      if (imageUnlockState.success) {
-        setIsImageUnlocked(true);
-        setCurrentStep('decrypt-data');
-        toast({
-          title: "Success",
-          description: "Image successfully unlocked!",
-          variant: "default",
-          className: "bg-green-100 border-green-300"
-        });
-      } else if (imageUnlockState.message) {
-        toast({
-          variant: "destructive",
-          title: "Image Unlock Failed",
-          description: imageUnlockState.message,
-        });
-      }
-      setIsUnlocking(false);
+    if (imageUnlockState.success) {
+      setIsImageUnlocked(true);
+      setCurrentStep('decrypt-data');
+      toast({
+        title: "Success",
+        description: "Image successfully unlocked!",
+        variant: "default",
+        className: "bg-green-100 border-green-300"
+      });
+    } else if (imageUnlockState.message && !isImageUnlocking && imageUnlockState.message.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Image Unlock Failed",
+        description: imageUnlockState.message,
+      });
     }
-  }, [imageUnlockState, toast, isUnlocking]);
+  }, [imageUnlockState, toast, isImageUnlocking]);
 
   useEffect(() => {
-    if (isDecrypting) {
-        if (dataDecryptState.success) {
-            setIsDataDecrypted(true);
-            setCurrentStep('done');
-        } else if (dataDecryptState.message) {
-            toast({
-                variant: "destructive",
-                title: "Data Decryption Failed",
-                description: dataDecryptState.message,
-            });
-        }
-        setIsDecrypting(false);
+    if (dataDecryptState.success) {
+      setIsDataDecrypted(true);
+      setCurrentStep('done');
+    } else if (dataDecryptState.message && !isDataDecrypting && dataDecryptState.message.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Data Decryption Failed",
+        description: dataDecryptState.message,
+      });
     }
-  }, [dataDecryptState, toast, isDecrypting]);
+  }, [dataDecryptState, toast, isDataDecrypting]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,21 +73,14 @@ export default function ReceiverPanel() {
     }
   };
 
-  const handleImageUnlock = (formData: FormData) => {
-    setIsUnlocking(true);
-    imageUnlockAction(formData);
-  };
-
-  const handleDataDecrypt = (formData: FormData) => {
-    setIsDecrypting(true);
-    dataDecryptAction(formData);
-  };
-
   const resetFlow = () => {
     setCurrentStep('upload');
     setUploadedFile(null);
     setIsImageUnlocked(false);
     setIsDataDecrypted(false);
+    // You might want to reset form states here if they hold onto old data
+    const form = document.querySelector('form');
+    form?.reset();
   }
 
   return (
@@ -116,7 +101,7 @@ export default function ReceiverPanel() {
 
         {/* Step 2: Unlock Image */}
         <Card className={`shadow-md transition-opacity duration-500 ${currentStep === 'upload' ? 'opacity-50' : ''}`}>
-          <form action={handleImageUnlock}>
+          <form action={imageUnlockAction}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     {isImageUnlocked ? <Unlock className="text-green-500"/> : <Lock className="text-primary"/>}
@@ -127,13 +112,13 @@ export default function ReceiverPanel() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="imageKey">Image Decryption Key</Label>
-                <Input id="imageKey" name="imageKey" type="password" placeholder="Enter image key" required disabled={currentStep === 'upload' || isUnlocking || isImageUnlocked} />
+                <Input id="imageKey" name="imageKey" type="password" placeholder="Enter image key" required disabled={currentStep === 'upload' || isImageUnlocking || isImageUnlocked} />
               </div>
             </CardContent>
              {!isImageUnlocked && (
               <CardFooter>
-                  <Button type="submit" className="w-full" disabled={currentStep === 'upload' || isUnlocking || currentStep !== 'unlock-image'}>
-                    {isUnlocking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Unlocking...</> : 
+                  <Button type="submit" className="w-full" disabled={currentStep !== 'unlock-image' || isImageUnlocking}>
+                    {isImageUnlocking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Unlocking...</> : 
                     <><KeyRound className="mr-2 h-4 w-4" /> Unlock Image</>}
                   </Button>
               </CardFooter>
@@ -143,7 +128,7 @@ export default function ReceiverPanel() {
 
         {/* Step 3: Decrypt Data */}
         <Card className={`shadow-md transition-opacity duration-500 ${currentStep !== 'decrypt-data' || isDataDecrypted ? 'opacity-50' : ''}`}>
-          <form action={handleDataDecrypt}>
+          <form action={dataDecryptAction}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                  {isDataDecrypted ? <CheckCircle className="text-green-500"/> : <FileLock className="text-primary"/>}
@@ -154,13 +139,13 @@ export default function ReceiverPanel() {
             <CardContent>
               <div className="space-y-2">
                 <Label htmlFor="dataKey">Data Decryption Key</Label>
-                <Input id="dataKey" name="dataKey" type="password" placeholder="Enter data key" required disabled={currentStep !== 'decrypt-data' || isDataDecrypted || isDecrypting} />
+                <Input id="dataKey" name="dataKey" type="password" placeholder="Enter data key" required disabled={currentStep !== 'decrypt-data' || isDataDecrypted || isDataDecrypting} />
               </div>
             </CardContent>
             {!isDataDecrypted && (
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={currentStep !== 'decrypt-data' || isDecrypting}>
-                  {isDecrypting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Decrypting...</> :
+                <Button type="submit" className="w-full" disabled={currentStep !== 'decrypt-data' || isDataDecrypting}>
+                  {isDataDecrypting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Decrypting...</> :
                    <><Eye className="mr-2 h-4 w-4" /> Decrypt Data</>
                    }
                 </Button>
@@ -197,7 +182,7 @@ export default function ReceiverPanel() {
             <div className="w-full min-h-[100px] rounded-lg border bg-muted p-4 flex items-center justify-center">
               {isDataDecrypted && dataDecryptState?.data ? (
                 <blockquote className="text-lg italic border-l-4 border-primary pl-4 text-foreground">
-                  {dataDecryptState.data}
+                  {dataDecryptate.data}
                 </blockquote>
               ) : (
                 <div className="text-center text-muted-foreground p-4">
