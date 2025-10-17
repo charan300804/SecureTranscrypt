@@ -43,14 +43,14 @@ export default function SenderPanel() {
   const isSubmitted = formState.message !== "";
 
   useEffect(() => {
-    if (isSubmitted) {
+    if (formState.message) {
       if (formState.success) {
         toast({
             title: "Success!",
             description: formState.message,
             className: "bg-green-100 border-green-300"
         });
-      } else if (formState.message) {
+      } else {
         toast({
             variant: "destructive",
             title: "Processing Failed",
@@ -58,7 +58,7 @@ export default function SenderPanel() {
         });
       }
     }
-  }, [formState, isSubmitted, toast]);
+  }, [formState, toast]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

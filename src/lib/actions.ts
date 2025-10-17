@@ -88,21 +88,6 @@ export async function signOut() {
 
 // MOCK SENDER/RECEIVER ACTIONS
 
-async function toDataURL(url: string): Promise<string> {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const reader = new FileReader();
-    // This is a server action, but we need browser APIs for this conversion.
-    // In a real scenario, this would be handled differently, but for this mock, we assume browser-like env.
-    // A more robust solution for server-side would use Buffer.
-    const dataUrlPromise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-    });
-    reader.readAsDataURL(blob);
-    return dataUrlPromise;
-}
-
 async function fileToDataURL(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -139,6 +124,9 @@ export async function processFile(prevState: any, formData: FormData): Promise<{
 
 export async function unlockImage(prevState: any, formData: FormData) {
   const imageKey = formData.get('imageKey');
+  const fileName = formData.get('fileName');
+
+  console.log(`Unlocking image for file: ${fileName}`);
   
   // Simulate processing time
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -154,9 +142,12 @@ export async function unlockImage(prevState: any, formData: FormData) {
 
 export async function decryptData(prevState: any, formData: FormData) {
   const dataKey = formData.get('dataKey') as string;
+  const fileName = formData.get('fileName');
+
+  console.log(`Decrypting data for file: ${fileName}`);
 
   if (!dataKey) {
-    return { success: false, message: "Data key is required." };
+    return { success: false, message: "Data key is required.", data: "" };
   }
 
   try {
@@ -171,10 +162,10 @@ export async function decryptData(prevState: any, formData: FormData) {
         data: "This is the secret embedded data. Mission accomplished."
       };
     } else {
-      return { success: false, message: "Invalid data decryption key. Access Denied." };
+      return { success: false, message: "Invalid data decryption key. Access Denied.", data: "" };
     }
   } catch (error) {
     console.error("AI validation error:", error);
-    return { success: false, message: "An error occurred during key validation. Please try again." };
+    return { success: false, message: "An error occurred during key validation. Please try again.", data: "" };
   }
 }
