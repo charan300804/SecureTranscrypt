@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useOptimistic } from "react";
+import { useFormStatus } from "react-dom";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,16 +18,31 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const senderImage = PlaceHolderImages.find(img => img.id === 'sender-image-placeholder');
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? (
+        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+      ) : (
+        <><ArrowRight className="mr-2 h-4 w-4" /> Process & Generate File</>
+      )}
+    </Button>
+  );
+}
+
 export default function SenderPanel() {
   const { toast } = useToast();
+  const [formState, formAction] = useActionState(processFile, { success: false, message: "", fileUrl: "" });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(senderImage?.imageUrl ?? null);
-  const [formState, formAction] = useActionState(processFile, { success: false, message: "", fileUrl: "" });
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  const isSubmitted = formState.message !== "";
 
   useEffect(() => {
-    if(isSubmitted) {
+    if (isSubmitted) {
       if (formState.success) {
         toast({
             title: "Success!",
@@ -40,7 +56,6 @@ export default function SenderPanel() {
             description: formState.message,
         });
       }
-      setIsProcessing(false);
     }
   }, [formState, isSubmitted, toast]);
 
@@ -56,32 +71,27 @@ export default function SenderPanel() {
           title: "Invalid File Type",
           description: "Please upload a valid image file.",
         });
+        e.target.value = "";
       }
     }
   };
-  
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsProcessing(true);
-    setIsSubmitted(true);
-    const formData = new FormData(e.currentTarget);
+
+  const handleFormAction = (formData: FormData) => {
     if (uploadedFile) {
       formData.set('image', uploadedFile);
     } else if (senderImage) {
        formData.set('imageUrl', senderImage.imageUrl);
     }
-    
     formAction(formData);
   }
 
   const resetFlow = () => {
-    setIsSubmitted(false);
-    setIsProcessing(false);
+    formRef.current?.reset();
     setUploadedFile(null);
     setPreviewUrl(senderImage?.imageUrl ?? null);
-    // Reset form fields if inside a <form> element
-    const form = document.querySelector('form');
-    form?.reset();
+    // Directly calling formAction will trigger a re-render with the initial state
+    // This is a way to reset the action state without another piece of state
+    formAction(new FormData());
   };
 
   return (
@@ -111,12 +121,12 @@ export default function SenderPanel() {
           </div>
         </CardContent>
         <CardFooter>
-            <Input id="image-upload" type="file" accept="image/*" onChange={handleFileChange} className="file:text-primary file:font-semibold"/>
+            <Input id="image-upload" type="file" name="image" accept="image/*" onChange={handleFileChange} className="file:text-primary file:font-semibold" disabled={formState.success} />
         </CardFooter>
       </Card>
 
       <Card className="shadow-md">
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} action={handleFormAction}>
           <CardHeader>
             <CardTitle>Encryption & Embedding</CardTitle>
             <CardDescription>Secure your image and embed your secret data.</CardDescription>
@@ -134,7 +144,7 @@ export default function SenderPanel() {
                   <p className="text-sm text-muted-foreground mb-4">This key is required to view the image itself. Keep it safe.</p>
                   <div className="space-y-2">
                     <Label htmlFor="imageKey">Image Key</Label>
-                    <Input id="imageKey" name="imageKey" type="password" placeholder="e.g., image-key-123" required />
+                    <Input id="imageKey" name="imageKey" type="password" placeholder="e.g., image-key-123" required disabled={formState.success} />
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -149,16 +159,16 @@ export default function SenderPanel() {
                   <p className="text-sm text-muted-foreground">The data below will be hidden inside the image and encrypted with its own key.</p>
                   <div className="space-y-2">
                     <Label htmlFor="dataToEmbed">Data to Embed</Label>
-                    <Textarea id="dataToEmbed" name="dataToEmbed" placeholder="Enter your secret message here..." required />
+                    <Textarea id="dataToEmbed" name="dataToEmbed" placeholder="Enter your secret message here..." required disabled={formState.success} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dataKey">Data Encryption Key</Label>
-                    <Input id="dataKey" name="dataKey" type="password" placeholder="e.g., data-key-123" required />
+                    <Input id="dataKey" name="dataKey" type="password" placeholder="e.g., data-key-123" required disabled={formState.success} />
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-            {isSubmitted && !isProcessing && (
+            {isSubmitted && (
                 <div className="mt-6">
                     {formState.success ? (
                         <Alert variant="default" className="bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700">
@@ -175,31 +185,27 @@ export default function SenderPanel() {
                             </AlertDescription>
                         </Alert>
                     ) : (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Processing Failed</AlertTitle>
-                            <AlertDescription>
-                                {formState.message || "An unknown error occurred. Please try again."}
-                            </AlertDescription>
-                        </Alert>
+                         formState.message && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Processing Failed</AlertTitle>
+                                <AlertDescription>
+                                    {formState.message || "An unknown error occurred. Please try again."}
+                                </AlertDescription>
+                            </Alert>
+                         )
                     )}
                 </div>
             )}
           </CardContent>
           <CardFooter className="flex-col gap-2 items-stretch">
             {formState.success ? (
-               <Button onClick={resetFlow} variant="outline" className="w-full">
+               <Button onClick={resetFlow} variant="outline" className="w-full" type="button">
                 <RotateCcw className="mr-2 h-4 w-4"/>
                 Start Over
               </Button>
             ) : (
-              <Button type="submit" className="w-full" disabled={isProcessing}>
-                {isProcessing ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
-                ) : (
-                  <><ArrowRight className="mr-2 h-4 w-4" /> Process & Generate File</>
-                )}
-            </Button>
+              <SubmitButton />
             )}
           </CardFooter>
         </form>
