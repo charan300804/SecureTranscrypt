@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react-dom";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -132,7 +132,7 @@ export default function ReceiverPanel() {
             </CardContent>
              {!isImageUnlocked && (
               <CardFooter>
-                  <Button type="submit" className="w-full" disabled={currentStep === 'upload' || isUnlocking}>
+                  <Button type="submit" className="w-full" disabled={currentStep === 'upload' || isUnlocking || currentStep !== 'unlock-image'}>
                     {isUnlocking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Unlocking...</> : 
                     <><KeyRound className="mr-2 h-4 w-4" /> Unlock Image</>}
                   </Button>
