@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { unlockImage, decryptData } from "@/lib/actions";
-import { CheckCircle, Eye, FileLock, KeyRound, Loader2, Lock, Unlock, UploadCloud } from "lucide-react";
+import { CheckCircle, Eye, FileLock, KeyRound, Loader2, Lock, Unlock, UploadCloud, RotateCcw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -31,6 +31,7 @@ export default function ReceiverPanel() {
   const isDataDecrypted = dataDecryptState.success;
 
   useEffect(() => {
+    // Don't show toasts on initial render or while processing
     if (imageUnlockState.message && !isImageUnlocking) {
       if (imageUnlockState.success) {
         setCurrentStep('decrypt-data');
@@ -51,6 +52,7 @@ export default function ReceiverPanel() {
   }, [imageUnlockState, toast, isImageUnlocking]);
 
   useEffect(() => {
+    // Don't show toasts on initial render or while processing
     if (dataDecryptState.message && !isDataDecrypting) {
       if (dataDecryptState.success) {
         setCurrentStep('done');
@@ -94,19 +96,8 @@ export default function ReceiverPanel() {
   const resetFlow = () => {
     setCurrentStep('upload');
     setUploadedFile(null);
-    // Directly dispatch initial state to reset actions
-    imageUnlockAction(initialImageUnlockState as any);
-    dataDecryptAction(initialDataDecryptState as any);
-    
-    // Find all forms and reset their fields
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => form.reset());
-    
-    // Specifically reset the file input
-    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
+    imageUnlockAction(null);
+    dataDecryptAction(null);
   }
 
   return (
@@ -229,7 +220,10 @@ export default function ReceiverPanel() {
                             You have successfully decrypted the image and the embedded data.
                         </AlertDescription>
                     </Alert>
-                    <Button onClick={resetFlow} variant="outline" className="w-full">Start Over</Button>
+                    <Button onClick={resetFlow} variant="outline" className="w-full">
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Start Over
+                    </Button>
                 </div>
             </CardFooter>
         )}
@@ -237,3 +231,5 @@ export default function ReceiverPanel() {
     </div>
   );
 }
+
+    
