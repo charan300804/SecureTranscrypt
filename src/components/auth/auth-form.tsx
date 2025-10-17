@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { signIn, signUp } from "@/lib/actions";
 import { UserRole } from "@/lib/definitions";
@@ -28,7 +29,7 @@ function SubmitButton({ type }: { type: "login" | "register" }) {
 
 export default function AuthForm({ type, role }: AuthFormProps) {
   const action = type === "login" ? signIn.bind(null, role) : signUp.bind(null, role);
-  const [state, dispatch] = useFormState(action, { message: "" });
+  const [state, dispatch] = useActionState(action, { message: "" });
 
   const title = `${role.charAt(0).toUpperCase() + role.slice(1)} ${type === "login" ? "Sign In" : "Registration"}`;
   const description = type === "login" ? `Welcome back, ${role}. Please sign in to your account.` : `Create a new ${role} account to get started.`;
