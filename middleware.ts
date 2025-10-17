@@ -19,8 +19,12 @@ export function middleware(request: NextRequest) {
   let session: SessionPayload | null = null;
   if (sessionCookie?.value) {
     try {
-      session = JSON.parse(sessionCookie.value);
-    } catch {
+      // The cookie value is a string, so it needs to be parsed.
+      const sessionData = JSON.parse(sessionCookie.value);
+      // The session payload is nested inside the parsed data.
+      session = sessionData;
+    } catch (error) {
+      console.error('Failed to parse session cookie:', error);
       // Invalid session cookie, treat as unauthenticated
     }
   }

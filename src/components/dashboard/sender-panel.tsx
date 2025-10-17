@@ -43,10 +43,10 @@ export default function SenderPanel() {
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!uploadedFile) {
+    if (!uploadedFile && !senderImage) {
         toast({
             variant: "destructive",
-            title: "No Image Uploaded",
+            title: "No Image Provided",
             description: "Please upload an image before processing.",
         });
         return;
@@ -54,6 +54,14 @@ export default function SenderPanel() {
     setIsProcessing(true);
     setIsSubmitted(true);
     const formData = new FormData(e.currentTarget);
+    if (uploadedFile) {
+      formData.set('image', uploadedFile);
+    } else if (senderImage) {
+       // If no file is uploaded, we can assume we are using the placeholder.
+       // The action needs to know about it. We can pass the URL.
+       formData.set('imageUrl', senderImage.imageUrl);
+    }
+    
     await formAction(formData);
     setIsProcessing(false);
   }
@@ -141,7 +149,7 @@ export default function SenderPanel() {
                             <AlertDescription>
                                 {formState.message} Your secure file is ready for download.
                                 <Button size="sm" asChild className="mt-4 w-full md:w-auto">
-                                <a href={senderImage?.imageUrl} download="secured-file.png">
+                                <a href={formState.fileUrl} download="secured-file.png">
                                     <Download className="mr-2 h-4 w-4" />
                                     Download Secured File
                                 </a>

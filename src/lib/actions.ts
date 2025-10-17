@@ -88,15 +88,22 @@ export async function signOut() {
 
 // MOCK SENDER/RECEIVER ACTIONS
 
-export async function processFile(prevState: any, formData: FormData) {
+export async function processFile(prevState: any, formData: FormData): Promise<{success: boolean, message: string, fileUrl: string}> {
   // Simulate processing time
   await new Promise(resolve => setTimeout(resolve, 1500));
   
-  // This is a mock action. In a real app, this would handle
-  // image steganography and encryption.
-  // For now, we'll just return a success message and a mock file URL.
+  const imageUrl = formData.get('imageUrl') as string | null;
+  const imageFile = formData.get('image') as File | null;
+
+  let fileUrl = "/mock-encrypted-image.png"; // default
+  if(imageFile) {
+    // In a real app, you would upload this file and get a URL
+    fileUrl = URL.createObjectURL(imageFile);
+  } else if (imageUrl) {
+    fileUrl = imageUrl;
+  }
   
-  return { success: true, message: "File processed successfully!", fileUrl: "/mock-encrypted-image.png" };
+  return { success: true, message: "File processed successfully!", fileUrl };
 }
 
 export async function unlockImage(prevState: any, formData: FormData) {
