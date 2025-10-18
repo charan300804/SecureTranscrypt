@@ -12,6 +12,7 @@ export function middleware(request: NextRequest) {
 
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.includes(pathname);
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME);
   let session: SessionPayload | null = null;
@@ -21,28 +22,34 @@ export function middleware(request: NextRequest) {
       session = JSON.parse(sessionCookie.value);
     } catch (error) {
       console.error('Failed to parse session cookie:', error);
-      // Invalid session cookie, treat as unauthenticated
     }
   }
 
-  if (isProtectedRoute) {
-    if (!session) {
-      // Not authenticated, redirect to home
+  // Handle expired session
+  if (session && new Date(session.expires) < new Date()) {
+    session = null;
+    // We can't delete the cookie here directly, but we can treat the session as null.
+    // The response will proceed as if unauthenticated.
+  }
+
+  if (session) {
+    // User is authenticated
+    const userDashboard = `/${session.role}`;
+
+    if (isProtectedRoute) {
+      // If user is on a protected route, ensure it's their own dashboard
+      if (!pathname.startsWith(userDashboard)) {
+        return NextResponse.redirect(new URL(userDashboard, request.url));
+      }
+    } else if (isAuthRoute || isPublicRoute) {
+      // If authenticated user is on an auth or public page, redirect to their dashboard
+      return NextResponse.redirect(new URL(userDashboard, request.url));
+    }
+  } else {
+    // User is not authenticated
+    if (isProtectedRoute) {
+      // If unauthenticated user tries to access a protected route, redirect to home
       return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    // Check role access
-    const role = session.role;
-    if (!pathname.startsWith(`/${role}`)) {
-      // Wrong role for this route, redirect to their own dashboard
-      return NextResponse.redirect(new URL(`/${role}`, request.url));
-    }
-  }
-
-  if (isAuthRoute) {
-    if (session) {
-      // Authenticated user on an auth route, redirect to their dashboard
-      return NextResponse.redirect(new URL(`/${session.role}`, request.url));
     }
   }
 
