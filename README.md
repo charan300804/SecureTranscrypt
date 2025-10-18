@@ -1,45 +1,88 @@
 # SecureTranscrypt
 
-This is a Next.js starter project for SecureTranscrypt, a platform for secure data transmission between a Sender and a Receiver.
+This is a Next.js starter project for SecureTranscrypt, a platform for secure data transmission between a Sender and a Receiver. This guide provides detailed instructions to set up and run the application on your local machine for development.
 
-## Running Locally
+## Core Technologies
 
-Follow these steps to run the application on your local machine.
+- **Framework**: Next.js (with App Router)
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Authentication**: Firebase Authentication
+- **Database**: Firestore
+- **File Generation**: `pdf-lib` for PDFs, `docx` for Word documents
 
-### 1. Install Dependencies
+---
 
-First, open your terminal, navigate to the project's root directory, and install the necessary npm packages:
+## Local Development Setup: Step-by-Step
+
+Follow these steps carefully to ensure the application runs correctly on your local machine.
+
+### Step 1: Install Dependencies
+
+First, you need to install all the necessary packages defined in `package.json`. Open your terminal, navigate to the root directory of this project, and run the following command:
 
 ```bash
 npm install
 ```
+This command reads the `package.json` file and downloads all the required libraries (like React, Next.js, Firebase, etc.) into the `node_modules` folder.
 
-### 2. Set Up Firebase Service Account
+---
 
-This application uses the Firebase Admin SDK for server-side authentication, which requires a service account credential.
+### Step 2: Set Up Firebase Service Account
 
-1.  **Navigate to your Firebase Project:** Go to the [Firebase Console](https://console.firebase.google.com/) and select your project.
-2.  **Go to Service Accounts:** In your project settings, find the "Service Accounts" tab.
-3.  **Generate a New Private Key:** Click the "Generate new private key" button. This will download a JSON file containing your service account credentials.
-4.  **Move the Credential File:** Move the downloaded JSON file into the root directory of this project. For security, it's recommended to rename it to something simple, like `service-account.json`. This file is listed in `.gitignore` and will not be committed to your repository.
+The application's backend uses the Firebase Admin SDK to perform secure actions like creating users and verifying sessions. This SDK requires a "service account," which is a special credential that grants your server administrative privileges.
 
-### 3. Configure Environment Variables
+1.  **Navigate to your Firebase Project:**
+    *   Go to the [Firebase Console](https://console.firebase.google.com/).
+    *   Select the project that is connected to this application.
 
-The application uses a `.env` file to load your Firebase credentials.
+2.  **Access Service Account Settings:**
+    *   In the left-hand navigation pane, click the gear icon next to **Project Overview**.
+    *   Select **Project settings**.
+    *   In the Project settings page, click on the **Service accounts** tab.
 
-1.  **Create the File:** In the root directory of the project, create a new file named `.env`.
-2.  **Add the Credential Path:** Add the following line to the `.env` file, replacing `service-account.json` with the actual name of your credential file if you renamed it differently.
+3.  **Generate a New Private Key:**
+    *   Click the **Generate new private key** button.
+    *   A confirmation dialog will appear. Click **Generate key**.
+    *   This will automatically download a JSON file to your computer. This file contains highly sensitive credentials. **Do not share it or commit it to version control.**
 
-    ```
-    GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
-    ```
+4.  **Place and Rename the Credential File:**
+    *   Move the downloaded JSON file into the root directory of this project.
+    *   For security and simplicity, it's recommended to rename the file to `service-account.json`. The project's `.gitignore` file is already configured to ignore this specific filename, preventing it from being accidentally committed.
 
-### 4. Run the Development Server
+---
 
-Now you can start the Next.js development server. The application will be available at `http://localhost:9002`.
+### Step 3: Configure Local Environment Variables
 
-```bash
-npm run dev
-```
+Environment variables are used to store sensitive information like API keys or file paths without hardcoding them into the application.
 
-The application is now running locally. You can access it by opening your web browser and navigating to `http://localhost:9002`.
+1.  **Locate the `.env` file:**
+    *   In the project's root directory, you will find a file named `.env`.
+
+2.  **Edit the `.env` file:**
+    *   Open the `.env` file. It contains a single line:
+        ```
+        GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+        ```
+    *   This line tells the Firebase Admin SDK where to find your credential file. If you renamed your JSON file to something other than `service-account.json` in the previous step, make sure you update the filename here to match.
+
+---
+
+### Step 4: Run the Development Server
+
+Now you are ready to start the application.
+
+1.  **Run the `dev` script:**
+    *   In your terminal, from the project's root directory, run the following command:
+        ```bash
+        npm run dev
+        ```
+    *   This command executes the `dev` script defined in your `package.json`, which starts the Next.js development server. You should see output in your terminal indicating that the server is compiling and running.
+
+2.  **Access the Application:**
+    *   Once the server has successfully started (you'll typically see a "ready" message), open your web browser.
+    *   Navigate to the following URL:
+        ```
+        http://localhost:9002
+        ```
+
+The application is now running locally. You can interact with it, create accounts, and use the sender/receiver functionality. Any changes you make to the source code will be automatically recompiled, and the application will update in your browser.
