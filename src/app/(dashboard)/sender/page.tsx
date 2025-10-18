@@ -13,7 +13,7 @@ export default function SenderPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Sender Dashboard</CardTitle>
           <CardDescription>
-            Create your secure package. Upload an image, embed your data, and set encryption keys before sending it to the receiver.
+            Create your secure document. Embed your data, choose a format, and set an encryption key before sending it to the receiver.
           </CardDescription>
         </CardHeader>
       </Card>

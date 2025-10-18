@@ -4,7 +4,10 @@ import { z } from "zod";
 import { LoginSchema, RegisterSchema, type UserRole } from "./definitions";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { validateDecryptionKey } from "@/ai/flows/validate-decryption-key";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import mammoth from "mammoth";
+
 
 // Mock user store
 const users = [
@@ -87,86 +90,122 @@ export async function signOut() {
 
 // MOCK SENDER/RECEIVER ACTIONS
 
-async function fileToDataURL(file: File): Promise<string> {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const dataUrl = `data:${file.type};base64,${buffer.toString('base64')}`;
-    return dataUrl;
-}
+const SenderFileSchema = z.object({
+  dataToEmbed: z.string().min(1, "Data to embed cannot be empty."),
+  encryptionKey: z.string().min(1, "Encryption key cannot be empty."),
+  format: z.enum(["pdf", "docx"]),
+});
 
-
-export async function processFile(prevState: any, formData: FormData): Promise<{success: boolean, message: string, fileUrl: string}> {
-  // Simulate processing time
+export async function processFile(prevState: any, formData: FormData): Promise<{success: boolean; message: string; fileUrl: string; fileName: string;}> {
   await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  const imageUrl = formData.get('imageUrl') as string | null;
-  const imageFile = formData.get('image') as File | null;
 
-  let fileUrl = "/mock-encrypted-image.png"; // default
+  const validatedFields = SenderFileSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return { success: false, message: "Invalid form data.", fileUrl: "", fileName: "" };
+  }
+  
+  const { dataToEmbed, encryptionKey, format } = validatedFields.data;
+
+  // MOCK: "Encrypt" data by embedding it with the key. In a real app, you'd use a crypto library.
+  const content = `ENCRYPTION_KEY_DO_NOT_SHARE: ${encryptionKey}\n\n---BEGIN SECURE DATA---\n\n${dataToEmbed}\n\n---END SECURE DATA---`;
+  const fileName = `secure-document.${format}`;
+  let fileBuffer: Buffer;
+  let mimeType: string;
 
   try {
-    if(imageFile && imageFile.size > 0) {
-      // In a real app, you would process, encrypt, and upload this file to cloud storage.
-      // For this mock, we'll convert it to a data URL to make it downloadable.
-      fileUrl = await fileToDataURL(imageFile);
-    } else if (imageUrl) {
-      // If no file is uploaded, use the placeholder image URL
-      const response = await fetch(imageUrl);
-      const imageBuffer = await response.arrayBuffer();
-      const contentType = response.headers.get('content-type') || 'image/png';
-      fileUrl = `data:${contentType};base64,${Buffer.from(imageBuffer).toString('base64')}`;
+    if (format === 'pdf') {
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage();
+      const { width, height } = page.getSize();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      page.drawText(content, {
+        x: 50,
+        y: height - 4 * 50,
+        font,
+        size: 12,
+        color: rgb(0, 0, 0),
+        maxWidth: width - 100,
+        lineHeight: 24,
+      });
+      const pdfBytes = await pdfDoc.save();
+      fileBuffer = Buffer.from(pdfBytes);
+      mimeType = 'application/pdf';
+
+    } else { // docx
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [new TextRun(content)],
+            }),
+          ],
+        }],
+      });
+      const docxBuffer = await Packer.toBuffer(doc);
+      fileBuffer = Buffer.from(docxBuffer);
+      mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     }
+    
+    const fileUrl = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
+
+    return { success: true, message: "Secure document generated successfully!", fileUrl, fileName };
+
   } catch (error) {
     console.error("Error processing file:", error);
-    return { success: false, message: "There was an error processing your image.", fileUrl: "" };
+    return { success: false, message: "There was an error generating your document.", fileUrl: "", fileName: "" };
   }
-  
-  return { success: true, message: "File processed successfully!", fileUrl };
 }
 
-export async function unlockImage(prevState: any, formData: FormData) {
-  const imageKey = formData.get('imageKey');
-  const fileName = formData.get('fileName');
 
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // MOCK: In a real app, you would check the key against the file.
-  // We'll use a hardcoded "correct" key for demo purposes.
-  if (imageKey === "image-key-123") {
-    return { success: true, message: "Image unlocked!" };
-  }
-  
-  return { success: false, message: "Invalid image decryption key." };
-}
+const ReceiverFileSchema = z.object({
+  dataKey: z.string().min(1, { message: "Data key cannot be empty." }),
+  file: z.instanceof(File),
+});
 
-export async function decryptData(prevState: any, formData: FormData) {
-  const dataKey = formData.get('dataKey') as string;
-  const fileName = formData.get('fileName');
-
-  if (!dataKey) {
-    return { success: false, message: "Data key is required.", data: "" };
-  }
-
-  // Simulate processing time
+export async function decryptData(prevState: any, formData: FormData): Promise<{success: boolean; message: string; data: string;}> {
   await new Promise(resolve => setTimeout(resolve, 1500));
 
+  const validatedFields = ReceiverFileSchema.safeParse(Object.fromEntries(formData.entries()));
+
+  if (!validatedFields.success) {
+    return { success: false, message: "Invalid submission. Please upload a file and provide a key.", data: "" };
+  }
+
+  const { dataKey, file } = validatedFields.data;
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  
   try {
-    const validationResult = await validateDecryptionKey({ key: dataKey });
-    
-    // MOCK: We use a hardcoded key for the "correct" data,
-    // but use the AI validation result to gate access.
-    if (validationResult.isValid && dataKey === "data-key-123") {
-      return { 
-        success: true, 
-        message: "Data decrypted successfully!",
-        data: "This is the secret embedded data. Mission accomplished."
-      };
+    let textContent = '';
+    if (file.type === 'application/pdf') {
+        // This is a simplified extraction. pdf-lib doesn't have a high-level text extraction API.
+        // We'll just check if the key exists in the raw buffer content for this mock.
+        textContent = fileBuffer.toString();
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const result = await mammoth.extractRawText({ buffer: fileBuffer });
+        textContent = result.value;
     } else {
-      return { success: false, message: "Invalid data decryption key. Access Denied.", data: "" };
+        return { success: false, message: "Unsupported file type.", data: "" };
     }
+    
+    // MOCK: "Decrypt" by checking for key and extracting data
+    const keyLine = `ENCRYPTION_KEY_DO_NOT_SHARE: ${dataKey}`;
+    if (!textContent.includes(keyLine)) {
+      return { success: false, message: "Invalid decryption key or corrupted file.", data: "" };
+    }
+
+    const dataRegex = /---BEGIN SECURE DATA---\n\n([\s\S]*?)\n\n---END SECURE DATA---/;
+    const match = textContent.match(dataRegex);
+
+    if (match && match[1]) {
+      return { success: true, message: "Data decrypted successfully!", data: match[1] };
+    } else {
+      return { success: false, message: "Could not find secure data in the document.", data: "" };
+    }
+    
   } catch (error) {
-    console.error("AI validation error:", error);
-    return { success: false, message: "An error occurred during key validation. Please try again.", data: "" };
+    console.error("Decryption error:", error);
+    return { success: false, message: "An error occurred while reading the file.", data: "" };
   }
 }

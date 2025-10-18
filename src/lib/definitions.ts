@@ -12,13 +12,9 @@ export const RegisterSchema = z.object({
 });
 
 export const SenderSchema = z.object({
-  imageKey: z.string().min(6, { message: "Image key must be at least 6 characters." }),
   dataToEmbed: z.string().min(1, { message: "Data to embed cannot be empty." }),
-  dataKey: z.string().min(6, { message: "Data key must be at least 6 characters." }),
-});
-
-export const ReceiverImageKeySchema = z.object({
-  imageKey: z.string().min(1, { message: "Image key cannot be empty." }),
+  encryptionKey: z.string().min(6, { message: "Encryption key must be at least 6 characters." }),
+  format: z.enum(['pdf', 'docx']),
 });
 
 export const ReceiverDataKeySchema = z.object({

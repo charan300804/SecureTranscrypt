@@ -13,7 +13,7 @@ export default function ReceiverPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Receiver Dashboard</CardTitle>
           <CardDescription>
-            Unlock your secure package. Upload the file from the sender and use the provided keys to access the image and hidden data.
+            Unlock your secure document. Upload the file from the sender and use the provided key to access the hidden data.
           </CardDescription>
         </CardHeader>
       </Card>

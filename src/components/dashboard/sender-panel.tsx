@@ -1,23 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
-import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { processFile } from "@/lib/actions";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loader2, UploadCloud, RotateCcw } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loader2, RotateCcw, FileType, FileQuestion } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const senderImage = PlaceHolderImages.find(img => img.id === 'sender-image-placeholder');
-const initialState = { success: false, message: "", fileUrl: "" };
+const initialState = { success: false, message: "", fileUrl: "", fileName: "" };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -27,7 +24,7 @@ function SubmitButton() {
       {pending ? (
         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
       ) : (
-        <><ArrowRight className="mr-2 h-4 w-4" /> Process & Generate File</>
+        <><ArrowRight className="mr-2 h-4 w-4" /> Generate Secure File</>
       )}
     </Button>
   );
@@ -36,179 +33,110 @@ function SubmitButton() {
 export default function SenderPanel() {
   const { toast } = useToast();
   const [formState, formAction] = useActionState(processFile, initialState);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(senderImage?.imageUrl ?? null);
   const formRef = useRef<HTMLFormElement>(null);
   
   const isSubmitted = formState.message !== "";
 
   useEffect(() => {
-    if (formState.message) {
-      if (formState.success) {
-        toast({
-            title: "Success!",
-            description: formState.message,
-            className: "bg-green-100 border-green-300"
-        });
-      } else {
-        toast({
-            variant: "destructive",
-            title: "Processing Failed",
-            description: formState.message,
-        });
-      }
+    if (formState.message && !formState.success) {
+      toast({
+          variant: "destructive",
+          title: "Processing Failed",
+          description: formState.message,
+      });
     }
   }, [formState, toast]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type.startsWith("image/")) {
-        setUploadedFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invalid File Type",
-          description: "Please upload a valid image file.",
-        });
-        e.target.value = "";
-      }
-    }
-  };
-
-  const handleFormAction = (formData: FormData) => {
-    if (uploadedFile) {
-      formData.set('image', uploadedFile);
-    } else if (senderImage) {
-       formData.set('imageUrl', senderImage.imageUrl);
-    }
-    formAction(formData);
-  }
-
   const resetFlow = () => {
     formRef.current?.reset();
-    setUploadedFile(null);
-    setPreviewUrl(senderImage?.imageUrl ?? null);
-    // This is a way to reset the action state without another piece of state
     formAction(initialState as any);
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-8">
+    <div className="grid md:grid-cols-2 gap-8 items-start">
       <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle>Image Preview</CardTitle>
-          <CardDescription>This is the image you are securing.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="aspect-video w-full rounded-lg overflow-hidden border border-dashed flex items-center justify-center bg-muted/50">
-            {previewUrl ? (
-              <Image
-                src={previewUrl}
-                alt="Uploaded preview"
-                width={1200}
-                height={800}
-                className="object-cover w-full h-full"
-                data-ai-hint="landscape"
-              />
-            ) : (
-              <div className="text-center text-muted-foreground">
-                <UploadCloud className="mx-auto h-12 w-12" />
-                <p>Upload an image to see a preview</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter>
-            <Input id="image-upload" type="file" name="image" accept="image/*" onChange={handleFileChange} className="file:text-primary file:font-semibold" disabled={formState.success} />
-        </CardFooter>
-      </Card>
-
-      <Card className="shadow-md">
-        <form ref={formRef} action={handleFormAction}>
+        <form ref={formRef} action={formAction}>
           <CardHeader>
-            <CardTitle>Encryption & Embedding</CardTitle>
-            <CardDescription>Secure your image and embed your secret data.</CardDescription>
+            <CardTitle>Secure Document Generator</CardTitle>
+            <CardDescription>Embed your secret data into an encrypted PDF or Word document.</CardDescription>
           </CardHeader>
-          <CardContent>
-             <Accordion type="multiple" defaultValue={['image-encryption', 'data-embedding']} className="w-full">
-              <AccordionItem value="image-encryption">
-                <AccordionTrigger className="text-lg font-semibold">
-                    <div className="flex items-center gap-2">
-                        <KeyRound className="size-5 text-primary"/>
-                        Image Encryption Key
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2">
-                  <p className="text-sm text-muted-foreground mb-4">This key is required to view the image itself. Keep it safe.</p>
-                  <div className="space-y-2">
-                    <Label htmlFor="imageKey">Image Key</Label>
-                    <Input id="imageKey" name="imageKey" type="password" placeholder="e.g., image-key-123" required disabled={formState.success} />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="data-embedding">
-                <AccordionTrigger className="text-lg font-semibold">
-                    <div className="flex items-center gap-2">
-                        <FileText className="size-5 text-primary"/>
-                        Data Embedding
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 space-y-4">
-                  <p className="text-sm text-muted-foreground">The data below will be hidden inside the image and encrypted with its own key.</p>
-                  <div className="space-y-2">
-                    <Label htmlFor="dataToEmbed">Data to Embed</Label>
-                    <Textarea id="dataToEmbed" name="dataToEmbed" placeholder="Enter your secret message here..." required disabled={formState.success} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dataKey">Data Encryption Key</Label>
-                    <Input id="dataKey" name="dataKey" type="password" placeholder="e.g., data-key-123" required disabled={formState.success} />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            {isSubmitted && (
-                <div className="mt-6">
-                    {formState.success ? (
-                        <Alert variant="default" className="bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700">
-                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            <AlertTitle>Success!</AlertTitle>
-                            <AlertDescription>
-                                {formState.message} Your secure file is ready for download.
-                                <Button size="sm" asChild className="mt-4 w-full md:w-auto">
-                                <a href={formState.fileUrl} download="secured-file.png">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download Secured File
-                                </a>
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
-                    ) : (
-                         formState.message && (
-                            <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Processing Failed</AlertTitle>
-                                <AlertDescription>
-                                    {formState.message || "An unknown error occurred. Please try again."}
-                                </AlertDescription>
-                            </Alert>
-                         )
-                    )}
-                </div>
-            )}
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="dataToEmbed"><FileText className="inline-block mr-2"/>Data to Embed</Label>
+                <Textarea id="dataToEmbed" name="dataToEmbed" placeholder="Enter your secret message here..." required disabled={formState.success} />
+              </div>
+            </div>
+            <div className="space-y-4">
+               <div className="space-y-2">
+                  <Label htmlFor="format"><FileType className="inline-block mr-2"/>Document Format</Label>
+                  <Select name="format" defaultValue="pdf" required disabled={formState.success}>
+                    <SelectTrigger id="format">
+                      <SelectValue placeholder="Select document format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pdf">PDF (.pdf)</SelectItem>
+                      <SelectItem value="docx">Word Document (.docx)</SelectItem>
+                    </SelectContent>
+                  </Select>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="encryptionKey"><KeyRound className="inline-block mr-2"/>Encryption Key</Label>
+                <Input id="encryptionKey" name="encryptionKey" type="password" placeholder="Enter a secret key for encryption" required disabled={formState.success} />
+                 <p className="text-sm text-muted-foreground">This key will be required by the receiver to decrypt the data.</p>
+              </div>
+            </div>
           </CardContent>
           <CardFooter className="flex-col gap-2 items-stretch">
             {formState.success ? (
                <Button onClick={resetFlow} variant="outline" className="w-full" type="button">
                 <RotateCcw className="mr-2 h-4 w-4"/>
-                Start Over
+                Create Another File
               </Button>
             ) : (
               <SubmitButton />
             )}
           </CardFooter>
         </form>
+      </Card>
+      
+      <Card className="shadow-md sticky top-24">
+        <CardHeader>
+          <CardTitle>Generated File</CardTitle>
+          <CardDescription>Your secure file will be available for download here.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isSubmitted && formState.success ? (
+              <Alert variant="default" className="bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700">
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertTitle>Success!</AlertTitle>
+                  <AlertDescription>
+                      {formState.message}
+                      <Button size="sm" asChild className="mt-4 w-full">
+                      <a href={formState.fileUrl} download={formState.fileName}>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download {formState.fileName}
+                      </a>
+                      </Button>
+                  </AlertDescription>
+              </Alert>
+          ) : isSubmitted && !formState.success ? (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Processing Failed</AlertTitle>
+                <AlertDescription>
+                    {formState.message || "An unknown error occurred. Please try again."}
+                </AlertDescription>
+            </Alert>
+          ) : (
+             <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                <FileQuestion className="mx-auto h-12 w-12" />
+                <p className="mt-4">Your generated file will appear here once you submit the form.</p>
+              </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );
