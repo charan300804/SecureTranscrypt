@@ -79,9 +79,9 @@ export default function Home() {
                      </div>
                   </CardHeader>
                   <CardContent>
-                    <p>Package your sensitive information within an image file, protected by two layers of encryption. Only your intended recipient with the correct keys can access it.</p>
+                    <p>Package your sensitive information within a document, protected by an encryption key. Only your intended recipient with the correct key can access it.</p>
                     <Button variant="secondary" className="mt-4" asChild>
-                       <Link href="/register/sender">Register as Sender <ArrowRight /></Link>
+                       <Link href="/login/sender">Login as Sender <ArrowRight /></Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -94,9 +94,9 @@ export default function Home() {
                      </div>
                   </CardHeader>
                   <CardContent>
-                    <p>Receive files and use the provided keys to decrypt and view the original image and its embedded data. Our system validates keys to prevent unauthorized access.</p>
+                    <p>Receive files and use the provided key to decrypt and view the original embedded data. Our system validates keys to prevent unauthorized access.</p>
                      <Button variant="secondary" className="mt-4" asChild>
-                       <Link href="/register/receiver">Register as Receiver <ArrowRight /></Link>
+                       <Link href="/login/receiver">Login as Receiver <ArrowRight /></Link>
                     </Button>
                   </CardContent>
                 </Card>
