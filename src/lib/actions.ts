@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { LoginSchema, RegisterSchema, type UserRole } from "./definitions";
+import { LoginSchema, RegisterSchema, SenderFileSchema, type UserRole } from "./definitions";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -90,26 +90,36 @@ export async function signOut() {
 
 // MOCK SENDER/RECEIVER ACTIONS
 
-const SenderFileSchema = z.object({
-  dataToEmbed: z.string().min(1, "Data to embed cannot be empty."),
-  encryptionKey: z.string().min(1, "Encryption key cannot be empty."),
-  format: z.enum(["pdf", "docx"]),
-});
-
 export async function processFile(prevState: any, formData: FormData): Promise<{success: boolean; message: string; fileUrl: string; fileName: string;}> {
   await new Promise(resolve => setTimeout(resolve, 1500));
 
   const validatedFields = SenderFileSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    return { success: false, message: "Invalid form data.", fileUrl: "", fileName: "" };
+    console.log(validatedFields.error.flatten().fieldErrors)
+    return { success: false, message: "Invalid form data. Please fill all fields.", fileUrl: "", fileName: "" };
   }
   
-  const { dataToEmbed, encryptionKey, format } = validatedFields.data;
+  const { dataToEmbed, imageKey, dataKey, format, image } = validatedFields.data;
 
-  // MOCK: "Encrypt" data by embedding it with the key. In a real app, you'd use a crypto library.
-  const content = `ENCRYPTION_KEY_DO_NOT_SHARE: ${encryptionKey}\n\n---BEGIN SECURE DATA---\n\n${dataToEmbed}\n\n---END SECURE DATA---`;
-  const fileName = `secure-document.${format}`;
+  // MOCK: "Encrypt" data by creating a structured text block.
+  const content = `
+---BEGIN SECURE PAYLOAD---
+
+[IMAGE ENCRYPTION BLOCK]
+ALGORITHM: AES-256
+IMAGE_FILE: ${image.name}
+IMAGE_KEY_HASH: ${(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(imageKey))).toString()}
+ENCRYPTED_IMAGE_DATA: [Simulated Encrypted Image Bytes...]
+
+[DATA ENCRYPTION BLOCK]
+ALGORITHM: AES-256
+DATA_KEY_HASH: ${(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataKey))).toString()}
+EMBEDDED_DATA: ${dataToEmbed}
+
+---END SECURE PAYLOAD---
+`;
+  const fileName = `secure-package.${format}`;
   let fileBuffer: Buffer;
   let mimeType: string;
 
@@ -121,12 +131,12 @@ export async function processFile(prevState: any, formData: FormData): Promise<{
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       page.drawText(content, {
         x: 50,
-        y: height - 4 * 50,
+        y: height - 50,
         font,
-        size: 12,
+        size: 10,
         color: rgb(0, 0, 0),
         maxWidth: width - 100,
-        lineHeight: 24,
+        lineHeight: 14,
       });
       const pdfBytes = await pdfDoc.save();
       fileBuffer = Buffer.from(pdfBytes);
@@ -138,7 +148,7 @@ export async function processFile(prevState: any, formData: FormData): Promise<{
           properties: {},
           children: [
             new Paragraph({
-              children: [new TextRun(content)],
+              children: [new TextRun({ text: content, font: "monospace" })],
             }),
           ],
         }],
@@ -192,7 +202,15 @@ export async function decryptData(prevState: any, formData: FormData): Promise<{
     // MOCK: "Decrypt" by checking for key and extracting data
     const keyLine = `ENCRYPTION_KEY_DO_NOT_SHARE: ${dataKey}`;
     if (!textContent.includes(keyLine)) {
-      return { success: false, message: "Invalid decryption key or corrupted file.", data: "" };
+      // In a real app, we would check the hash of the key
+      const dataRegex = /EMBEDDED_DATA: ([\s\S]*?)\n\n---END SECURE PAYLOAD---/;
+      const match = textContent.match(dataRegex);
+
+      if (match && match[1]) {
+        return { success: true, message: "Data decrypted successfully!", data: match[1].trim() };
+      } else {
+        return { success: false, message: "Invalid key or corrupted file. Could not find data.", data: "" };
+      }
     }
 
     const dataRegex = /---BEGIN SECURE DATA---\n\n([\s\S]*?)\n\n---END SECURE DATA---/;

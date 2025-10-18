@@ -11,11 +11,14 @@ export const RegisterSchema = z.object({
   password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
 });
 
-export const SenderSchema = z.object({
+export const SenderFileSchema = z.object({
+  image: z.instanceof(File).refine(file => file.size > 0, "Image is required."),
+  imageKey: z.string().min(1, { message: "Image encryption key cannot be empty." }),
   dataToEmbed: z.string().min(1, { message: "Data to embed cannot be empty." }),
-  encryptionKey: z.string().min(6, { message: "Encryption key must be at least 6 characters." }),
+  dataKey: z.string().min(1, { message: "Data encryption key cannot be empty." }),
   format: z.enum(['pdf', 'docx']),
 });
+
 
 export const ReceiverDataKeySchema = z.object({
   dataKey: z.string().min(1, { message: "Data key cannot be empty." }),

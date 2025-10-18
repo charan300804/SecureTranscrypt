@@ -3,6 +3,7 @@
 import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { processFile } from "@/lib/actions";
-import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loader2, RotateCcw, FileType, FileQuestion } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle, Download, FileText, KeyRound, Loader2, RotateCcw, FileType, FileQuestion, Image as ImageIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -34,6 +35,7 @@ export default function SenderPanel() {
   const { toast } = useToast();
   const [formState, formAction] = useActionState(processFile, initialState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const isSubmitted = formState.message !== "";
 
@@ -47,8 +49,22 @@ export default function SenderPanel() {
     }
   }, [formState, toast]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+        setImagePreview(null);
+    }
+  };
+
   const resetFlow = () => {
     formRef.current?.reset();
+    setImagePreview(null);
     formAction(initialState as any);
   };
 
@@ -58,36 +74,54 @@ export default function SenderPanel() {
         <form ref={formRef} action={formAction}>
           <CardHeader>
             <CardTitle>Secure Document Generator</CardTitle>
-            <CardDescription>Embed your secret data into an encrypted PDF or Word document.</CardDescription>
+            <CardDescription>Create a two-layer encrypted document.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="dataToEmbed"><FileText className="inline-block mr-2"/>Data to Embed</Label>
-                <Textarea id="dataToEmbed" name="dataToEmbed" placeholder="Enter your secret message here..." required disabled={formState.success} />
-              </div>
+
+            {/* Step 1: Upload Image */}
+            <div className="space-y-2">
+              <Label htmlFor="image"><ImageIcon className="inline-block mr-2"/>1. Upload Cover Image</Label>
+              <Input id="image" name="image" type="file" required disabled={formState.success} onChange={handleImageChange} accept="image/png, image/jpeg"/>
+              {imagePreview && (
+                <div className="mt-4 rounded-md border p-2">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Image Preview:</p>
+                    <Image src={imagePreview} alt="Image preview" width={400} height={300} className="rounded-md object-contain w-full" />
+                </div>
+              )}
             </div>
-            <div className="space-y-4">
-               <div className="space-y-2">
-                  <Label htmlFor="format"><FileType className="inline-block mr-2"/>Document Format</Label>
-                  <Select name="format" defaultValue="pdf" required disabled={formState.success}>
-                    <SelectTrigger id="format">
-                      <SelectValue placeholder="Select document format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pdf">PDF (.pdf)</SelectItem>
-                      <SelectItem value="docx">Word Document (.docx)</SelectItem>
-                    </SelectContent>
-                  </Select>
-              </div>
+
+             {/* Step 2: Image Key */}
+            <div className="space-y-2">
+              <Label htmlFor="imageKey"><KeyRound className="inline-block mr-2"/>2. Image Encryption Key</Label>
+              <Input id="imageKey" name="imageKey" type="password" placeholder="Enter key to encrypt the image" required disabled={formState.success} />
             </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="encryptionKey"><KeyRound className="inline-block mr-2"/>Encryption Key</Label>
-                <Input id="encryptionKey" name="encryptionKey" type="password" placeholder="Enter a secret key for encryption" required disabled={formState.success} />
-                 <p className="text-sm text-muted-foreground">This key will be required by the receiver to decrypt the data.</p>
-              </div>
+
+            {/* Step 3: Data to Embed */}
+            <div className="space-y-2">
+              <Label htmlFor="dataToEmbed"><FileText className="inline-block mr-2"/>3. Data to Embed</Label>
+              <Textarea id="dataToEmbed" name="dataToEmbed" placeholder="Enter your secret message here..." required disabled={formState.success} />
             </div>
+            
+            {/* Step 4: Data Key */}
+            <div className="space-y-2">
+              <Label htmlFor="dataKey"><KeyRound className="inline-block mr-2"/>4. Data Encryption Key</Label>
+              <Input id="dataKey" name="dataKey" type="password" placeholder="Enter a separate key for the data" required disabled={formState.success} />
+            </div>
+
+            {/* Step 5: Format */}
+            <div className="space-y-2">
+                <Label htmlFor="format"><FileType className="inline-block mr-2"/>5. Output Format</Label>
+                <Select name="format" defaultValue="pdf" required disabled={formState.success}>
+                  <SelectTrigger id="format">
+                    <SelectValue placeholder="Select document format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pdf">PDF (.pdf)</SelectItem>
+                    <SelectItem value="docx">Word Document (.docx)</SelectItem>
+                  </SelectContent>
+                </Select>
+            </div>
+
           </CardContent>
           <CardFooter className="flex-col gap-2 items-stretch">
             {formState.success ? (
