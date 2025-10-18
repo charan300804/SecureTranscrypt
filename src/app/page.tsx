@@ -50,21 +50,21 @@ export default function Home() {
                     <div className="flex-shrink-0 bg-primary text-primary-foreground rounded-full size-8 flex items-center justify-center font-bold">1</div>
                     <div className="space-y-1">
                       <h4 className="font-semibold text-lg">Sender Encrypts</h4>
-                      <p className="text-muted-foreground">Upload an image, embed your data, and protect both with separate encryption keys.</p>
+                      <p className="text-muted-foreground">The sender embeds secret data within a document, protecting it with an encryption key.</p>
                     </div>
                   </div>
                    <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 bg-primary text-primary-foreground rounded-full size-8 flex items-center justify-center font-bold">2</div>
                     <div className="space-y-1">
                       <h4 className="font-semibold text-lg">Secure Transmission</h4>
-                      <p className="text-muted-foreground">Download the secured file and send it to your receiver through any channel you trust.</p>
+                      <p className="text-muted-foreground">The sender downloads the secured document (PDF or Word) and sends it to the receiver.</p>
                     </div>
                   </div>
                    <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 bg-primary text-primary-foreground rounded-full size-8 flex items-center justify-center font-bold">3</div>
                     <div className="space-y-1">
                       <h4 className="font-semibold text-lg">Receiver Decrypts</h4>
-                      <p className="text-muted-foreground">The receiver uses the two keys to unlock the image and decrypt the hidden data.</p>
+                      <p className="text-muted-foreground">The receiver uploads the document and uses the secret key to decrypt and view the data.</p>
                     </div>
                   </div>
                 </div>
