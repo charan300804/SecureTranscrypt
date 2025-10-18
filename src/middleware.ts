@@ -1,5 +1,7 @@
+"use server";
+
 import { type NextRequest, NextResponse } from "next/server";
-import { type SessionPayload } from "./lib/definitions";
+import { type SessionPayload } from "./src/lib/definitions";
 
 const protectedRoutes = ["/sender", "/receiver"];
 const authRoutes = ["/login", "/register"];
@@ -7,7 +9,7 @@ const publicRoutes = ["/"];
 
 const SESSION_COOKIE_NAME = "secure-transcrypt-session";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME);
@@ -19,11 +21,6 @@ export function middleware(request: NextRequest) {
       // Validate session expiration
       if (sessionData.expires && new Date(sessionData.expires) > new Date()) {
         session = sessionData;
-      } else {
-        // Clear expired cookie
-        const response = NextResponse.next();
-        response.cookies.delete(SESSION_COOKIE_NAME);
-        return response;
       }
     } catch (error) {
       console.error('Failed to parse session cookie:', error);
@@ -34,6 +31,13 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
   const isPublicHome = pathname === '/';
+
+  // Handle expired session by clearing cookie
+  if (sessionCookie && !session) {
+      const response = NextResponse.redirect(new URL("/", request.url));
+      response.cookies.delete(SESSION_COOKIE_NAME);
+      return response;
+  }
 
   if (session) {
     // If logged in, redirect from auth routes or home page to their dashboard
