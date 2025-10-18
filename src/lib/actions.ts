@@ -200,26 +200,18 @@ export async function decryptData(prevState: any, formData: FormData): Promise<{
     }
     
     // MOCK: "Decrypt" by checking for key and extracting data
-    const keyLine = `ENCRYPTION_KEY_DO_NOT_SHARE: ${dataKey}`;
+    const keyLine = `DATA_KEY_HASH: ${(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataKey))).toString()}`;
     if (!textContent.includes(keyLine)) {
-      // In a real app, we would check the hash of the key
-      const dataRegex = /EMBEDDED_DATA: ([\s\S]*?)\n\n---END SECURE PAYLOAD---/;
-      const match = textContent.match(dataRegex);
-
-      if (match && match[1]) {
-        return { success: true, message: "Data decrypted successfully!", data: match[1].trim() };
-      } else {
-        return { success: false, message: "Invalid key or corrupted file. Could not find data.", data: "" };
-      }
+        return { success: false, message: "Invalid Data Key. Decryption failed.", data: "" };
     }
-
-    const dataRegex = /---BEGIN SECURE DATA---\n\n([\s\S]*?)\n\n---END SECURE DATA---/;
+    
+    const dataRegex = /EMBEDDED_DATA: ([\s\S]*?)\n\n---END SECURE PAYLOAD---/;
     const match = textContent.match(dataRegex);
 
     if (match && match[1]) {
-      return { success: true, message: "Data decrypted successfully!", data: match[1] };
+      return { success: true, message: "Data decrypted successfully!", data: match[1].trim() };
     } else {
-      return { success: false, message: "Could not find secure data in the document.", data: "" };
+      return { success: false, message: "Corrupted file. Could not extract embedded data.", data: "" };
     }
     
   } catch (error) {
