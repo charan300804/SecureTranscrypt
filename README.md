@@ -7,6 +7,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 
+
+
 This is a Next.js starter project for SecureTranscrypt, a platform for secure data transmission between a Sender and a Receiver. This guide provides detailed instructions to set up and run the application on your local machine for development.
 
 ## Core Technologies
